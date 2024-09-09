@@ -4,7 +4,7 @@ const db = require('../db/db')
 
 router.get('/dbeaver', async (req, res) => {
     try {
-      const result = await db.query('SELECT * FROM public.dbeaver');
+      const result = await db.query('SELECT id , Employee_name ,Employee_salary ,Employee_bonus FROM Employee ;');
       res.json(result.rows);
     } catch (err) {
       console.error(err.message);
