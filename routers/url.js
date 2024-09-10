@@ -1,15 +1,11 @@
-const express = require('express')
-const router = new express.Router()
-const db = require('../db/db')
+const express = require('express');
+const router = new express.Router();
+const { createShortUrl,redirectToOriginalUrl } = require('../controllers/urlController');
 
-router.get('/dbeaver', async (req, res) => {
-    try {
-      const result = await db.query('SELECT id , Employee_name ,Employee_salary ,Employee_bonus FROM Employee ;');
-      res.json(result.rows);
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
-    }
-  });
+// Route to shorten a URL
+router.post('/shorten',createShortUrl);
+
+// Route to redirect to the original URL
+router.get('/:short_url',redirectToOriginalUrl)
 
 module.exports = router;
