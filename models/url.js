@@ -1,9 +1,9 @@
 const db = require('../db/db');
 
-const insertUrl= async(original_url,short_code,expires_at,password) =>{
+const insertUrl= async(original_url,short_url,expires_at) =>{
     const result= await db.query(
-       'INSERT INTO urls (original_url,short_code,expires_at,password) VALUES ($1, $2, $3, $4) RETURNING *',
-       [original_url,short_code,expires_at,password]
+       'INSERT INTO urls (original_url,short_url,expires_at) VALUES ($1, $2, $3) RETURNING *',
+       [original_url,short_url,expires_at]
     );
     return result.rows[0]
 };
@@ -14,14 +14,14 @@ const getUrlByOriginalUrl = async(original_url) =>{
     return result.rows[0]; // Return the first match, if any
 };
 
-// Get the URL details by short code
-const getUrlByShortCode = async (short_code) =>{
-    const result = await db.query('SELECT * FROM urls WHERE short_code = $1',[short_code]);
+// Get the URL details by short url
+const getUrlByShortUrl = async (short_url) =>{
+    const result = await db.query('SELECT * FROM urls WHERE short_url = $1',[short_url]);
     return result.rows[0];
 };
 
 module.exports ={
     insertUrl,
     getUrlByOriginalUrl,
-    getUrlByShortCode,
+    getUrlByShortUrl,
 };
