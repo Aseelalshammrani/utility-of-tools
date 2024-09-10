@@ -1,9 +1,9 @@
-require('dotenv').config()
 const express = require('express')
-const urlRouter=require('./routers/url')
 const app=express()
+const urlRoutes=require('./routers/url')
+
 
 app.use(express.json())
-app.use(urlRouter)
+app.use(urlRoutes)
 
 module.exports=app
