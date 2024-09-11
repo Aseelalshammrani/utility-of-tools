@@ -1,8 +1,8 @@
-require('dotenv').config()
-const { insertUrl , getUrlByOriginalAndCustomDomain ,getUrlByShortUrl} = require('../models/url');
+require('dotenv').config();
+const { insertUrl ,getUrlByShortUrl } = require('../models/url');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
-const db = require('../db/db')
+const db = require('../db/db');
 const port=process.env.PORT;
 
 
@@ -11,27 +11,29 @@ const generateShortUrl = () =>{
     return uuidv4().slice(0,7) // Truncate UUID to the first 7 characters
 };
 
-//***Create a new short URL with unique original URL + custom domain combination
+//***Create a new short URL with a unique custom path (case-insensitive)
 const createShortUrl = async (req,res) =>{
     const { original_url,custom_path,expires_at} = req.body;
 
-    //Enforce custom domain length (maximum 10 characters)
-    if ( custom_path && custom_path.length > 10){
-        return res.status(400).json({ error: 'Custom domain must be 10 characters or fewer' })
+    // Normalize custom path to lowercase
+    const normalizedCustomPath = custom_path ? custom_path.toLowerCase() : null ;
+
+    // Enforce custom path length (maximum 10 characters)
+    if ( normalizedCustomPath && normalizedCustomPath.length > 10){
+        return res.status(400).json({ error: 'Custom path must be 10 characters or fewer' })
     }
 
     try{
-        // Check if the combination of original URL and custom domain already exists
-
-        if(custom_path){
-            const existingEntry = await getUrlByOriginalAndCustomDomain(original_url,custom_path);
+        // Check if the custom path already exists (case-insensitive)
+        if(normalizedCustomPath){
+            const existingEntry = await getUrlByShortUrl(normalizedCustomPath);
             if(existingEntry){
-                return res.status(409).json({ error: 'The custom domain for a specific URL is already taken' })
+                return res.status(409).json({ error: 'The custom path is already taken' })
             }
         }
 
-        // Generate a short URL using uuid if no custom domain is provided
-        const shortUrl  = custom_path  || generateShortUrl();
+        // Generate a short URL using uuid if no custom path is provided
+        const shortUrl  = normalizedCustomPath || generateShortUrl();
 
         // If expires_at is not provided, store null
         const expirationDate = expires_at || null ;
@@ -40,10 +42,10 @@ const createShortUrl = async (req,res) =>{
         const newUrl = await insertUrl(original_url,shortUrl,expirationDate);
 
         // Generate a QR code for the new short URL
-        const qrCodeUrl= await QRCode.toDataURL(`http://localhost:3000/${shortUrl}`)
+        const qrCodeUrl= await QRCode.toDataURL(`http://localhost:${port}/${shortUrl}`)
 
         // Respond with the new short URL and QR code
-        res.json({ short_url:`http://localhost:3000/${shortUrl}`, qr_code:qrCodeUrl })
+        res.json({ short_url:`http://localhost:${port}/${shortUrl}`, qr_code:qrCodeUrl })
     }catch(error){
         res.status(500).json({ error: 'Error creating short URL' })
     }
