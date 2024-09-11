@@ -1,5 +1,5 @@
 require('dotenv').config()
-const { insertUrl , getUrlByOriginalUrl ,getUrlByShortUrl} = require('../models/url');
+const { insertUrl , getUrlByOriginalAndCustomDomain ,getUrlByShortUrl} = require('../models/url');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const db = require('../db/db')
@@ -11,32 +11,39 @@ const generateShortUrl = () =>{
     return uuidv4().slice(0,7) // Truncate UUID to the first 7 characters
 };
 
-//***Create a new short URL
+//***Create a new short URL with unique original URL + custom domain combination
 const createShortUrl = async (req,res) =>{
-    const { original_url,short_url,expires_at} = req.body;
+    const { original_url,custom_domain,expires_at} = req.body;
+
+    //Enforce custom domain length (maximum 10 characters)
+    if ( custom_domain && custom_domain.length > 10){
+        return res.status(400).json({ error: 'Custom domain must be 10 characters or fewer' })
+    }
 
     try{
-        const existingUrl = await getUrlByOriginalUrl(original_url);
-        if (existingUrl) {
-            // If the URL exists, return the existing short URL and QR code
-            const qrCodeUrl = await QRCode.toDataURL(`http://localhost:${port}/${existingUrl.short_url}`);
-            return res.json({ short_url: `http://localhost:${port}/${existingUrl.short_url}` , qr_code:qrCodeUrl});
+        // Check if the combination of original URL and custom domain already exists
+
+        if(custom_domain){
+            const existingEntry = await getUrlByOriginalAndCustomDomain(original_url,custom_domain);
+            if(existingEntry){
+                return res.status(409).json({ error: 'The custom domain for a specific URL is already taken' })
+            }
         }
 
-        // Generate a short URL using uuid if none is provided
-        const generatedShortUrl = short_url || generateShortUrl();
+        // Generate a short URL using uuid if no custom domain is provided
+        const shortUrl  = custom_domain  || generateShortUrl();
 
         // If expires_at is not provided, store null
         const expirationDate = expires_at || null ;
 
         // Insert the new URL into the database
-        const newUrl = await insertUrl(original_url,generatedShortUrl,expirationDate);
+        const newUrl = await insertUrl(original_url,shortUrl,expirationDate);
 
         // Generate a QR code for the new short URL
-        const qrCodeUrl= await QRCode.toDataURL(`http://localhost:3000/${generatedShortUrl}`)
+        const qrCodeUrl= await QRCode.toDataURL(`http://localhost:3000/${shortUrl}`)
 
         // Respond with the new short URL and QR code
-        res.json({ short_url:`http://localhost:3000/${generatedShortUrl}`, qr_code:qrCodeUrl })
+        res.json({ short_url:`http://localhost:3000/${shortUrl}`, qr_code:qrCodeUrl })
     }catch(error){
         res.status(500).json({ error: 'Error creating short URL' })
     }
