@@ -13,25 +13,25 @@ const generateShortUrl = () =>{
 
 //***Create a new short URL with unique original URL + custom domain combination
 const createShortUrl = async (req,res) =>{
-    const { original_url,custom_domain,expires_at} = req.body;
+    const { original_url,custom_path,expires_at} = req.body;
 
     //Enforce custom domain length (maximum 10 characters)
-    if ( custom_domain && custom_domain.length > 10){
+    if ( custom_path && custom_path.length > 10){
         return res.status(400).json({ error: 'Custom domain must be 10 characters or fewer' })
     }
 
     try{
         // Check if the combination of original URL and custom domain already exists
 
-        if(custom_domain){
-            const existingEntry = await getUrlByOriginalAndCustomDomain(original_url,custom_domain);
+        if(custom_path){
+            const existingEntry = await getUrlByOriginalAndCustomDomain(original_url,custom_path);
             if(existingEntry){
                 return res.status(409).json({ error: 'The custom domain for a specific URL is already taken' })
             }
         }
 
         // Generate a short URL using uuid if no custom domain is provided
-        const shortUrl  = custom_domain  || generateShortUrl();
+        const shortUrl  = custom_path  || generateShortUrl();
 
         // If expires_at is not provided, store null
         const expirationDate = expires_at || null ;
