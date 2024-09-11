@@ -48,6 +48,7 @@ const createShortUrl = async (req,res) =>{
         res.json({ short_url:`http://localhost:${port}/${shortUrl}`, qr_code:qrCodeUrl })
     }catch(error){
         res.status(500).json({ error: 'Error creating short URL' })
+        console.log(error)
     }
 }
 

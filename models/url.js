@@ -3,7 +3,7 @@ const db = require('../db/db');
 // Insert a new URL into the database (custom_path as lowercase)
 const insertUrl= async (original_url,short_url,expires_at) =>{
     const result= await db.query(
-       'INSERT INTO urls (original_url,short_url,expires_at) VALUES ($1, LOWER$2, $3) RETURNING *',
+       'INSERT INTO urls (original_url,short_url,expires_at) VALUES ($1, LOWER($2), $3) RETURNING *',
        [original_url,short_url,expires_at]
     );
     return result.rows[0]
