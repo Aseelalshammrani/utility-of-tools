@@ -11,6 +11,18 @@ const generateShortUrl = () =>{
     return uuidv4().slice(0,7) // Truncate UUID to the first 7 characters
 };
 
+function toPostgresDateTime(jsDate){
+    const year = jsDate.getFullYear();
+    const month = String(jsDate.getMonth() + 1).padStart(2,'0'); // JS months are 0-based
+    const day = String(jsDate.getDate()).padStart(2,'0');
+    const hours = String(jsDate.getHours()).padStart(2,'0');
+    const minutes = String(jsDate.getMinutes()).padStart(2,'0');
+    const seconds = String(jsDate.getSeconds()).padStart(2,'0');
+
+   // Format as "YYYY-MM-DD HH:MM:SS" for PostgreSQL
+   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 //***Create a new short URL with a unique custom path (case-insensitive)
 const createShortUrl = async (req,res) =>{
     const { original_url,custom_path,expires_at} = req.body;
@@ -24,6 +36,13 @@ const createShortUrl = async (req,res) =>{
     }
 
     try{
+
+        // Convert the provided expires_at value to the correct format, if present
+        let expirationDate = null;
+        if(expires_at){
+            expirationDate = toPostgresDateTime(new Date(expires_at))
+        }
+
         // Check if the custom path already exists (case-insensitive)
         if(normalizedCustomPath){
             const existingEntry = await getUrlByShortUrl(normalizedCustomPath);
@@ -35,8 +54,6 @@ const createShortUrl = async (req,res) =>{
         // Generate a short URL using uuid if no custom path is provided
         const shortUrl  = normalizedCustomPath || generateShortUrl();
 
-        // If expires_at is not provided, store null
-        const expirationDate = expires_at || null ;
 
         // Insert the new URL into the database
         const newUrl = await insertUrl(original_url,shortUrl,expirationDate);
