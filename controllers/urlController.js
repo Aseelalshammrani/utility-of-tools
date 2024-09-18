@@ -30,10 +30,20 @@ const createShortUrl = async (req,res) =>{
     // Normalize custom path to lowercase
     const normalizedCustomPath = custom_path ? custom_path.toLowerCase() : null ;
 
-    // Enforce custom path length (maximum 10 characters)
-    if ( normalizedCustomPath && normalizedCustomPath.length > 10){
-        return res.status(400).json({ error: 'Custom path must be 10 characters or fewer' })
+    
+    // Validate custom path length and disallow spaces
+    if(normalizedCustomPath){
+
+        if (normalizedCustomPath.length > 10){
+            return res.status(400).json({ error: 'Custom path must be 10 characters or fewer' })
+        }
+
+        if (/\s/.test(normalizedCustomPath)){ // Check for spaces
+            return res.status(400).json({ error: 'Custom path should not contain spaces. Please use hyphens or underscores instead.'})
+        }
+
     }
+    
 
     try{
 
