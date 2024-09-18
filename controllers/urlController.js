@@ -37,11 +37,29 @@ const createShortUrl = async (req,res) =>{
 
     try{
 
-        // Convert the provided expires_at value to the correct format, if present
+        // Validate that the expires_at is today or a future date and time
         let expirationDate = null;
-        if(expires_at){
-            expirationDate = toPostgresDateTime(new Date(expires_at))
+        const currentDateTime = new Date();
+
+        if (expires_at){
+            let providedDateTime;
+
+            // Check if the user provided only a date without a time
+            if(expires_at.length === 10){  // Format "YYYY-MM-DD" (10 characters)
+                providedDateTime = new Date(`${expires_at}T23:59:59`)
+            }else{
+                // Parse the provided expires_at if it contains both date and time
+                providedDateTime = new Date(expires_at)
+            }
+
+            // Check if the provided date and time is in the past
+            if( providedDateTime < currentDateTime){
+                return res.status(400).json({ error: 'The expiration date or time cannot be in the past.'})
+            }
+            expirationDate = toPostgresDateTime(providedDateTime);
         }
+
+        
 
         // Check if the custom path already exists (case-insensitive)
         if(normalizedCustomPath){
