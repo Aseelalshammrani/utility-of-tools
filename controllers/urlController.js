@@ -3,6 +3,7 @@ const { insertUrl ,getUrlByShortUrl } = require('../models/url');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const db = require('../db/db');
+const validator = require('validator')
 const port=process.env.PORT;
 
 
@@ -26,6 +27,11 @@ function toPostgresDateTime(jsDate){
 //***Create a new short URL with a unique custom path (case-insensitive)
 const createShortUrl = async (req,res) =>{
     const { original_url,custom_path,expires_at} = req.body;
+
+    // Validate URL format using validator
+    if(!validator.isURL(original_url,{ protocols: ['http', 'https'],require_protocol: true })){
+        return res.status(400).json({ error: 'The provided original URL is not a valid http or https link.' })
+    }
 
     // Normalize custom path to lowercase
     const normalizedCustomPath = custom_path ? custom_path.toLowerCase() : null ;
