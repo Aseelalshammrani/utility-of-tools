@@ -40,8 +40,8 @@ const createShortUrl = async (req,res) =>{
     // Validate custom path length and disallow spaces
     if(normalizedCustomPath){
 
-        if (normalizedCustomPath.length > 10){
-            return res.status(400).json({ error: 'Custom path must be 10 characters or fewer' })
+        if (normalizedCustomPath.length > 15){
+            return res.status(400).json({ error: 'Custom path must be 15 characters or fewer' })
         }
 
         if (/\s/.test(normalizedCustomPath)){ // Check for spaces
