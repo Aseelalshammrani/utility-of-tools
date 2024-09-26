@@ -1,19 +1,30 @@
-const { Pool } = require('pg')
-require('dotenv').config()
+require('dotenv').config({ path:__dirname +'/../.env'});
 
-const pool = new Pool({
+const sql = require('mssql');
+
+
+const config = {
     user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT
+    server: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    port: parseInt(process.env.DB_PORT,10),
+    options: {
+      encrypt: true,
+      enableArithAbort:true,
+      trustServerCertificate: true 
+    }
+};
+
+
+sql.connect(config,error =>{
+  if(error){
+    console.error('Database connection failed: ',error)
+    process.exit(1);
+  }else{
+    console.log('Connected to SQL Server')
+  }
 })
 
-pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
-  });
-  
-module.exports = {
-    query: (text, params) => pool.query(text, params),
-  };
+
+module.exports = sql
