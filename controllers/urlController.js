@@ -19,23 +19,10 @@ function toSqlDateTime(jsDate){
     const hours = String(jsDate.getHours()).padStart(2,'0');
     const minutes = String(jsDate.getMinutes()).padStart(2,'0');
     const seconds = String(jsDate.getSeconds()).padStart(2,'0');
-    const milliseconds = String(jsDate.getMilliseconds()).padStart(3,'0')
 
-    // Format as "YYYY-MM-DD HH:MM:SS.SSS" for SQL Server
-   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+   // Format as "YYYY-MM-DD HH:MM:SS" for SQL server 
+   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
-
-function stripMilliseconds(dateTime){
-    return new Date(
-        dateTime.getFullYear(),
-        dateTime.getMonth(),
-        dateTime.getDate(),
-        dateTime.getHours(),
-        dateTime.getMinutes(),
-        dateTime.getSeconds()
-    )
-}
-
 
 //***Create a new short URL with a unique custom path (case-insensitive)
 const createShortUrl = async (req,res) =>{
@@ -82,7 +69,7 @@ const createShortUrl = async (req,res) =>{
             }
 
             // Check if the provided date and time is in the past
-            if( stripMilliseconds(currentDateTime) > stripMilliseconds(providedDateTime)){
+            if( providedDateTime < currentDateTime){
                 return res.status(400).json({ error: 'The expiration date or time cannot be in the past.'})
             }
             expirationDate = toSqlDateTime(providedDateTime);
@@ -126,11 +113,8 @@ const redirectToOriginalUrl = async (req,res) =>{
             return res.status(404).json({ error: 'URL not found' })
         }
 
-        // Strip milliseconds from both the current time and the expires_at time
-        const currentTime = stripMilliseconds(new Date());
-        const expirationTime = stripMilliseconds(new Date(url.expires_at))
         // Check if the URL has expired
-        if (currentTime > expirationTime){
+        if (url.expires_at && new Date() > new Date(url.expires_at)){
             return res.status(410).json({ error: 'URL has expired' });
         }
 
