@@ -2,7 +2,7 @@ require('dotenv').config();
 const { insertUrl ,getUrlByShortUrl } = require('../models/url');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
-const db = require('../db/db');
+const sql = require('../db/db');
 const validator = require('validator')
 const port=process.env.PORT;
 
@@ -119,7 +119,9 @@ const redirectToOriginalUrl = async (req,res) =>{
         }
 
         // Increment click count
-        await db.query('UPDATE urls SET click_count = click_count + 1 WHERE short_url = $1',[short_url]);
+        await sql.query`
+            UPDATE urls SET click_count = click_count + 1 WHERE short_url = ${short_url}
+        `;
 
         // Redirect to the original URL
         res.redirect(url.original_url);
