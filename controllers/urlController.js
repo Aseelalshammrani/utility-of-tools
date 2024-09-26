@@ -12,7 +12,7 @@ const generateShortUrl = () =>{
     return uuidv4().slice(0,7) // Truncate UUID to the first 7 characters
 };
 
-function toPostgresDateTime(jsDate){
+function toSqlDateTime(jsDate){
     const year = jsDate.getFullYear();
     const month = String(jsDate.getMonth() + 1).padStart(2,'0'); // JS months are 0-based
     const day = String(jsDate.getDate()).padStart(2,'0');
@@ -20,7 +20,7 @@ function toPostgresDateTime(jsDate){
     const minutes = String(jsDate.getMinutes()).padStart(2,'0');
     const seconds = String(jsDate.getSeconds()).padStart(2,'0');
 
-   // Format as "YYYY-MM-DD HH:MM:SS" for PostgreSQL
+   // Format as "YYYY-MM-DD HH:MM:SS" for SQL server 
    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
@@ -72,7 +72,7 @@ const createShortUrl = async (req,res) =>{
             if( providedDateTime < currentDateTime){
                 return res.status(400).json({ error: 'The expiration date or time cannot be in the past.'})
             }
-            expirationDate = toPostgresDateTime(providedDateTime);
+            expirationDate = toSqlDateTime(providedDateTime);
         }
 
         

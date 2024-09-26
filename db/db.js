@@ -2,20 +2,18 @@ require('dotenv').config({ path:__dirname +'/../.env'});
 
 const sql = require('mssql');
 
-
 const config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    server: process.env.DB_HOST,
+    server: process.env.DB_SERVER,
     database: process.env.DB_NAME,
     port: parseInt(process.env.DB_PORT,10),
     options: {
       encrypt: true,
       enableArithAbort:true,
-      trustServerCertificate: true 
+      trustServerCertificate: true //// Change to false in production
     }
 };
-
 
 sql.connect(config,error =>{
   if(error){
