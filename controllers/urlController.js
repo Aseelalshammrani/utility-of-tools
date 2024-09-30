@@ -19,10 +19,23 @@ function toSqlDateTime(jsDate){
     const hours = String(jsDate.getHours()).padStart(2,'0');
     const minutes = String(jsDate.getMinutes()).padStart(2,'0');
     const seconds = String(jsDate.getSeconds()).padStart(2,'0');
+    const milliseconds = String(jsDate.getMilliseconds()).padStart(3,'0');
 
-   // Format as "YYYY-MM-DD HH:MM:SS" for SQL server 
-   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+   // Format as "YYYY-MM-DD HH:MM:SS.SSS" for SQL Server 
+   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
 }
+
+function stripMilliseconds(date) {
+    return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        date.getHours(),
+        date.getMinutes(),
+        date.getSeconds()
+    );
+}
+
 
 //***Create a new short URL with a unique custom path (case-insensitive)
 const createShortUrl = async (req,res) =>{
@@ -49,31 +62,31 @@ const createShortUrl = async (req,res) =>{
         }
 
     }
-    
 
     try{
 
         // Validate that the expires_at is today or a future date and time
-        let expirationDate = null;
-        const currentDateTime = new Date();
+let expirationDate = null;
+const currentDateTime = stripMilliseconds(new Date()); // Strip milliseconds from current date
 
-        if (expires_at){
-            let providedDateTime;
+if (expires_at) {
+    let providedDateTime;
 
-            // Check if the user provided only a date without a time
-            if(expires_at.length === 10){  // Format "YYYY-MM-DD" (10 characters)
-                providedDateTime = new Date(`${expires_at}T23:59:59`)
-            }else{
-                // Parse the provided expires_at if it contains both date and time
-                providedDateTime = new Date(expires_at)
-            }
+    // Check if the user provided only a date without a time
+    if (expires_at.length === 10) {  // Format "YYYY-MM-DD" (10 characters)
+        providedDateTime = new Date(`${expires_at}T23:59:59`);
+    } else {
+        // Parse the provided expires_at if it contains both date and time
+        providedDateTime = stripMilliseconds(new Date(expires_at));  // Strip milliseconds
+    }
 
-            // Check if the provided date and time is in the past
-            if( providedDateTime < currentDateTime){
-                return res.status(400).json({ error: 'The expiration date or time cannot be in the past.'})
-            }
-            expirationDate = toSqlDateTime(providedDateTime);
-        }
+    // Check if the provided date and time is in the past
+    if (providedDateTime < currentDateTime) {
+        return res.status(400).json({ error: 'The expiration date or time cannot be in the past.' });
+    }
+
+    expirationDate = toSqlDateTime(providedDateTime);  // Format for SQL Server
+}
 
         
 
@@ -113,10 +126,16 @@ const redirectToOriginalUrl = async (req,res) =>{
             return res.status(404).json({ error: 'URL not found' })
         }
 
-        // Check if the URL has expired
-        if (url.expires_at && new Date() > new Date(url.expires_at)){
-            return res.status(410).json({ error: 'URL has expired' });
+        if (url.expires_at) {
+            const currentDateTime = stripMilliseconds(new Date());  // Current date without milliseconds
+            const expirationDateTime = stripMilliseconds(new Date(url.expires_at));  // Expiration date without milliseconds
+
+            if (expirationDateTime < currentDateTime) {
+                return res.status(410).json({ error: 'URL has expired' });
+            }
         }
+
+
 
         // Increment click count
         await sql.query`
