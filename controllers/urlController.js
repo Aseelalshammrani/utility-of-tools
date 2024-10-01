@@ -12,28 +12,15 @@ const generateShortUrl = () =>{
     return uuidv4().slice(0,7) // Truncate UUID to the first 7 characters
 };
 
-function toSqlDateTime(jsDate){
-    const year = jsDate.getFullYear();
-    const month = String(jsDate.getMonth() + 1).padStart(2,'0'); // JS months are 0-based
-    const day = String(jsDate.getDate()).padStart(2,'0');
-    const hours = String(jsDate.getHours()).padStart(2,'0');
-    const minutes = String(jsDate.getMinutes()).padStart(2,'0');
-    const seconds = String(jsDate.getSeconds()).padStart(2,'0');
-    const milliseconds = String(jsDate.getMilliseconds()).padStart(3,'0');
-
-   // Format as "YYYY-MM-DD HH:MM:SS.SSS" for SQL Server 
-   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+// Function to remove the time portion and keep only the date
+function stripTime(date){
+    return new Date(date.getFullYear(),date.getMonth(),date.getDate())
 }
 
-function stripMilliseconds(date) {
-    return new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        date.getHours(),
-        date.getMinutes(),
-        date.getSeconds()
-    );
+// Function to validate date format (YYYY-MM-DD)
+function isValidDate(dateString){
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;  // Regex for "YYYY-MM-DD"
+    return dateRegex.test(dateString)
 }
 
 
@@ -65,28 +52,24 @@ const createShortUrl = async (req,res) =>{
 
     try{
 
-        // Validate that the expires_at is today or a future date and time
-let expirationDate = null;
-const currentDateTime = stripMilliseconds(new Date()); // Strip milliseconds from current date
+        // Validate that the expires_at is a valid date (YYYY-MM-DD) and in the future
+        let expirationDate = null;
+        const currentDateTime =new Date(); 
 
-if (expires_at) {
-    let providedDateTime;
+        if (expires_at) {
+            if(!isValidDate(expires_at)){
+                return res.status(400).json({ error: 'Please provide a valid date in the format YYYY-MM-DD without spaces' })
+            }
 
-    // Check if the user provided only a date without a time
-    if (expires_at.length === 10) {  // Format "YYYY-MM-DD" (10 characters)
-        providedDateTime = new Date(`${expires_at}T23:59:59`);
-    } else {
-        // Parse the provided expires_at if it contains both date and time
-        providedDateTime = stripMilliseconds(new Date(expires_at));  // Strip milliseconds
-    }
+            const providedDateTime = new Date(expires_at) // Parse the date
 
-    // Check if the provided date and time is in the past
-    if (providedDateTime < currentDateTime) {
-        return res.status(400).json({ error: 'The expiration date or time cannot be in the past.' });
-    }
+            // Check if the provided date is in the past
+            if(providedDateTime < currentDateTime.setHours(0,0,0,0)){
+                return res.status(400).json({ error: 'The expiration date cannot be in the past.' })
+            }
 
-    expirationDate = toSqlDateTime(providedDateTime);  // Format for SQL Server
-}
+            expirationDate = expires_at
+        }
 
         
 
@@ -116,6 +99,26 @@ if (expires_at) {
     }
 }
 
+const getClickCount = async (req,res) =>{
+    const { short_url } = req.params
+
+    try{
+        const url = await getUrlByShortUrl(short_url);
+        if(!url){
+            return res.status(404).json({ error: 'URL not found'})
+        }
+
+        // Return click count to the user
+        res.json({
+            short_url: short_url,
+            click_count: url.click_count
+        })
+
+    }catch(error){
+        res.status(500).json({ error: 'Server error' })
+    }
+}
+
 //***Redirect to the original URL and check for expiration
 const redirectToOriginalUrl = async (req,res) =>{
     const { short_url } = req.params;
@@ -125,12 +128,12 @@ const redirectToOriginalUrl = async (req,res) =>{
         if (!url){
             return res.status(404).json({ error: 'URL not found' })
         }
-
+        // Check if the URL has expired (compare only the date part)
         if (url.expires_at) {
-            const currentDateTime = stripMilliseconds(new Date());  // Current date without milliseconds
-            const expirationDateTime = stripMilliseconds(new Date(url.expires_at));  // Expiration date without milliseconds
+            const currentDate = stripTime(new Date()); // Get current date without time
+            const expirationDate = new Date(url.expires_at);  // Stored as DATE (no time)
 
-            if (expirationDateTime < currentDateTime) {
+            if (expirationDate < currentDate) {
                 return res.status(410).json({ error: 'URL has expired' });
             }
         }
@@ -150,7 +153,10 @@ const redirectToOriginalUrl = async (req,res) =>{
     }
 };
 
+
+
 module.exports = {
     createShortUrl,
     redirectToOriginalUrl,
+    getClickCount
 }

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = new express.Router();
-const { createShortUrl,redirectToOriginalUrl } = require('../controllers/urlController');
+const { createShortUrl,redirectToOriginalUrl,getClickCount } = require('../controllers/urlController');
 const rateLimit = require('express-rate-limit')
 
 const limiter = rateLimit({
@@ -14,5 +14,8 @@ router.post('/shorten',limiter,createShortUrl);
 
 // Route to redirect to the original URL
 router.get('/:short_url',redirectToOriginalUrl)
+
+// Route to get the click count for a short URL
+router.get('/:short_url/click-count',getClickCount)
 
 module.exports = router;
