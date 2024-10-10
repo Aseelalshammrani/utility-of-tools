@@ -89,10 +89,10 @@ const createShortUrl = async (req,res) =>{
         const newUrl = await insertUrl(original_url,shortUrl,expirationDate);
 
         // Generate a QR code for the new short URL
-        const qrCodeUrl= await QRCode.toDataURL(`http://localhost:${port}/${shortUrl}`)
+        // const qrCodeUrl= await QRCode.toDataURL(`http://localhost:${port}/${shortUrl}`)
 
         // Respond with the new short URL and QR code
-        res.json({ short_url:`http://localhost:${port}/${shortUrl}`, qr_code:qrCodeUrl })
+        res.json({ short_url:`http://localhost:${port}/${shortUrl}` })
     }catch(error){
         res.status(500).json({ error: 'Error creating short URL' })
         console.log(error)
