@@ -18,7 +18,6 @@ Request Body:
 Response:
 {
     "short_url": "http://localhost:3000/mycustompath",
-    "qr_code": "data:image/png;base64,..." 
 }
 
 2. Redirect to the Original URL
