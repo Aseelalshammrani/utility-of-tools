@@ -10,11 +10,12 @@ const compressImage = async (req,res) =>{
     const fileExtension = path.extname(req.file.originalname).toLocaleLowerCase(); // Get original file extension
     const outputPath = `compressed/${Date.now()}-compressed${fileExtension}`
 
-    const quality = parseInt(req.query.quality) || 20
+    const quality = parseInt(req.body.quality) || 3
 
     // Ensure quality is within acceptable bounds (1-100)
-    if (quality < 1 || quality >100){
-        return res.status(400).send('Quality must be between 1 and 100')
+    if (quality < 1 || quality > 5){
+        fs.unlinkSync(filePath)
+        return res.status(400).send('Quality must be between 1 and 5')
     }
 
     try{
@@ -25,27 +26,27 @@ const compressImage = async (req,res) =>{
         if(fileSize > sizeThreshold){
             const image = sharp(filePath)
 
+            const sharpQuality = quality * 20
             // Apply compression based on the original format
             switch(fileExtension){
                 case '.jpg':
                 case '.jpeg':
-                    await image.jpeg({ quality:quality }).toFile(outputPath)
+                    await image.jpeg({ quality:sharpQuality}).toFile(outputPath)
                     break;
                 case '.png':
-                    await image.png({ quality:quality }).toFile(outputPath)
+                    await image.png({ quality:sharpQuality}).toFile(outputPath)
                     break;
                 case '.webp':
-                    await image.webp({ quality:quality }).toFile(outputPath)
+                    await image.webp({ quality:sharpQuality}).toFile(outputPath)
                     break; 
             }
 
             // Respond with the compressed image
             res.download(outputPath,(err) =>{
-                // Delete the files after sending the response
-                fs.unlinkSync(filePath);
-                fs.unlinkSync(outputPath)
+               cleanupFiles(filePath, outputPath);
             })
         }else{
+            cleanupFiles(filePath)
             res.status(200).json({
                 message: 'Image is smaller than the size threshold and was not compressed.',
                 fileSize: `${(fileSize / 1024).toFixed(2)} KB`
@@ -53,10 +54,19 @@ const compressImage = async (req,res) =>{
         }
 
     }catch(error){
-        console.log(error)
+        cleanupFiles(filePath, outputPath);
         res.status(500).send('Failed to process the image')
     }
 
+
 }
+
+const cleanupFiles = (...files) => {
+    files.forEach((file) => {
+        if (fs.existsSync(file)) {
+            fs.unlinkSync(file);
+        }
+    });
+};
 
 module.exports = { compressImage }

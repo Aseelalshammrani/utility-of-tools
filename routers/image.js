@@ -1,11 +1,12 @@
 const express = require('express')
 const multer = require('multer')
-const router = new express.Router()
 const { compressImage } = require('../controllers/imageController')
+const router = new express.Router()
+
 
 
 const upload = multer ({
-    dest:'uploads/',
+    dest:'uploads',
     limits:{
         fileSize:5242880
     },
