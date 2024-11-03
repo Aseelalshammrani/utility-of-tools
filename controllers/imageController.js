@@ -43,6 +43,9 @@ const compressImage = async (req,res) =>{
 
             // Respond with the compressed image
             res.download(outputPath,(err) =>{
+                if(err){
+                    console.error('Error downloading the file:', err)
+                }
                cleanupFiles(filePath, outputPath);
             })
         }else{
@@ -70,3 +73,5 @@ const cleanupFiles = (...files) => {
 };
 
 module.exports = { compressImage }
+
+
