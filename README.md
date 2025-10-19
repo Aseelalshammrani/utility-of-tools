@@ -24,7 +24,7 @@ This project provides a **Node.js API** with two main utilities:
 ### Image Utility
 
 -   **Resize images** by width and/or height.
--   **Compress images by quality** (scale 1--5).
+-   **Compress images by quality** (scale 1-5).
 -   **Compress images by target size (KB)** until desired size is
     reached.
 -   Supports formats: **JPG, JPEG, PNG, WEBP, HEIC, HEIF**.
