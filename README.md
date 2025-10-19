@@ -3,7 +3,7 @@
 This project provides a **Node.js API** with two main utilities:
 
 1.  **URL Shortener Service** -- Convert long URLs into short, shareable
-    links, with expiration dates and click tracking.\
+    links, with expiration dates and click tracking.
 2.  **Image Utility Service** -- Resize and compress images efficiently
     using the [Sharp](https://www.npmjs.com/package/sharp) library.
 
